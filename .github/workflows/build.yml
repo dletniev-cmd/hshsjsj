@@ -39,29 +39,23 @@ jobs:
           java -version
           echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
 
-      # 5. Regenerate android/gradlew (placeholder was committed, real one needed)
-      - name: 🔧 Regenerate android/gradlew
-        run: |
-          flutter create --platforms=android . --project-name bot_flow_builder
-          chmod +x android/gradlew
-
-      # 6. Install dependencies
+      # 5. Install dependencies
       - name: 📦 Install Flutter dependencies
         run: flutter pub get
 
-      # 7. Analyze code (optional, doesn't fail the build)
+      # 6. Analyze code (optional, doesn't fail the build)
       - name: 🔬 Analyze code
         run: flutter analyze --no-fatal-infos || true
 
-      # 8. Build release APK (uses debug keystore — no signing config needed)
+      # 7. Build release APK (uses debug keystore — no signing config needed)
       - name: 🔨 Build release APK
         run: flutter build apk --release --no-tree-shake-icons
 
-      # 9. Also build a debug APK for easy testing
+      # 8. Also build a debug APK for easy testing
       - name: 🔨 Build debug APK
         run: flutter build apk --debug --no-tree-shake-icons
 
-      # 10. Upload release APK as artifact
+      # 9. Upload release APK as artifact
       - name: 📤 Upload Release APK
         uses: actions/upload-artifact@v4
         with:
@@ -69,7 +63,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
-      # 11. Upload debug APK as artifact
+      # 10. Upload debug APK as artifact
       - name: 📤 Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
@@ -77,7 +71,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 30
 
-      # 12. Create GitHub Release on tag push (optional)
+      # 11. Create GitHub Release on tag push (optional)
       - name: 🏷️ Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
