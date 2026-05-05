@@ -1,0 +1,88 @@
+name: 🚀 Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Java 17 (required for modern Flutter + Gradle)
+      - name: ☕ Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Install Flutter (stable channel, pinned version for reproducibility)
+      - name: 🐦 Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.3'
+          channel: 'stable'
+          cache: true
+
+      # 4. Print versions for debugging
+      - name: 🔍 Print tool versions
+        run: |
+          flutter --version
+          java -version
+          echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
+
+      # 5. Regenerate android/gradlew (placeholder was committed, real one needed)
+      - name: 🔧 Regenerate android/gradlew
+        run: |
+          flutter create --platforms=android . --project-name bot_flow_builder
+          chmod +x android/gradlew
+
+      # 6. Install dependencies
+      - name: 📦 Install Flutter dependencies
+        run: flutter pub get
+
+      # 7. Analyze code (optional, doesn't fail the build)
+      - name: 🔬 Analyze code
+        run: flutter analyze --no-fatal-infos || true
+
+      # 8. Build release APK (uses debug keystore — no signing config needed)
+      - name: 🔨 Build release APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      # 9. Also build a debug APK for easy testing
+      - name: 🔨 Build debug APK
+        run: flutter build apk --debug --no-tree-shake-icons
+
+      # 10. Upload release APK as artifact
+      - name: 📤 Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BotFlow-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      # 11. Upload debug APK as artifact
+      - name: 📤 Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BotFlow-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
+
+      # 12. Create GitHub Release on tag push (optional)
+      - name: 🏷️ Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
